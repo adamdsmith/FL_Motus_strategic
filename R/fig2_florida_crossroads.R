@@ -3,10 +3,8 @@ if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman", quie
 pacman::p_load(httr, dplyr, readxl, threejs, pander)
 
 # Download tags detected to temp file
-tmp <- tempfile(fileext = ".xlsx")
-GET("https://motus.org/downloads/SmithAndLefevre2019_US.FL.xlsx",
-    write_disk(tmp))
-fl_tags <- read_xlsx(tmp, na = c("", "NA", "NULL")) %>% 
+fl_tags <- read_xlsx("Data/SmithAndLefevre2019_US.FL.xlsx", 
+                     na = c("", "NA", "NULL")) %>% 
   filter(
     # Tags with tag_id == 0 are likely spurious detections so omit them
     !tag_id == 0,
@@ -24,16 +22,21 @@ fl_tags_complete <- filter(fl_tags,
 fl_arcs <- fl_tags_complete %>%
   # Set generic central Florida anchor
   mutate(dest_lat = 28.142, dest_lon = -81.572)
-unlink(tmp)
 
 earth <- "https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73751/world.topo.bathy.200407.3x5400x2700.jpg"
 
 # Figure 2 is still image capture of the follow interactive product
 fl_crossroads <- globejs(img = earth, arcs = fl_arcs[, -1],
-                         arcsHeight = 0.35, arcsLwd = 3, arcsColor = "#be5e00", arcsOpacity = 0.6,
+                         arcsHeight = 0.35, arcsLwd = 8, arcsColor = "#be5e00", arcsOpacity = 0.6,
                          atmosphere = TRUE, bg = "white",
                          rotationlat = pi * 15/180, rotationlong = pi * -3/180)
-out_html <- file.path(normalizePath("Output"), "fl_crossroads.html")
-htmlwidgets::saveWidget(widget = fl_crossroads, file = out_html,
+htmlwidgets::saveWidget(widget = fl_crossroads, file = "fl_crossroads.html",
                         title = "Florida migration crossroads")
-openFileInOS(out_html)
+out_html <- tempfile(fileext = ".html")
+file.rename("fl_crossroads.html", out_html)
+openFileInOS(normalizePath(out_html))
+
+# The html files that opened in your browser is a temporary file and
+# will be removed when you close this R session
+# To delete it before closing R use:
+unlink(out_html)
