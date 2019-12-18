@@ -11,13 +11,18 @@ fl_tags <- read_xlsx("Data/SmithAndLefevre2019_US.FL.xlsx",
     # Drop questionable detections from a cluster of unusually noisy stations
     !(grepl("Talbot|GTM NERR|UNF|Lighthouse", name) & n_hits < 15)) %>%
   # For this summary we're indifferent to multiple detections so drop them
-  select(tag_id, origin_lat = tag_deploy_lat, origin_lon = tag_deploy_lon) %>%
+  select(tag_id, spp = species_name, origin_lat = tag_deploy_lat, origin_lon = tag_deploy_lon) %>%
   # Quick fix of incorrect longitudes for a couple of birds
   mutate(origin_lon = ifelse(origin_lon > 0, origin_lon * -1, origin_lon)) %>%
 distinct()
 fl_tags_complete <- filter(fl_tags, 
                            !(is.na(origin_lat)|is.na(origin_lon)))
+
+# Number of tags excluded due to missing metadata/privacy
 (n_missing_metadata <- nrow(fl_tags) - nrow(fl_tags_complete))
+
+# Minimum number of species detected
+(n_distinct(fl_tags_complete$spp))
 
 fl_arcs <- fl_tags_complete %>%
   # Set generic central Florida anchor
